@@ -9,7 +9,7 @@ type boardPiece =
   | Empty
   | Start
   | End
-  | Block(move)
+  | Block(int, move)
   | Player;
 
 type adjacentTiles = {
@@ -58,8 +58,8 @@ let movePosition = (move, {row, col}: Position.t) : Position.t =>
 let rec getMoves = (offset, t) =>
   switch (t) {
   | [] => []
-  | [Block(move), ...rest] => [
-      (offset, Block(move)),
+  | [Block(id, move), ...rest] => [
+      (offset, Block(id, move)),
       ...getMoves(offset + 1, rest),
     ]
   | [Player, ...rest] => [(offset, Player), ...getMoves(offset + 1, rest)]
@@ -72,15 +72,15 @@ let getMoves = getMoves(0);
 
 let canMoveIntoTile = adjacentTiles =>
   switch (adjacentTiles) {
-  | {left: Some(Block(Right))}
-  | {right: Some(Block(Left))}
-  | {up: Some(Block(Down))}
-  | {down: Some(Block(Up))}
-  | {center: Some(Block(NoMove))} => false
-  | {left: Some(Block(Left))}
-  | {left: Some(Block(Up))}
-  | {left: Some(Block(Down))}
-  | {left: Some(Block(NoMove))}
+  | {left: Some(Block(_, Right))}
+  | {right: Some(Block(_, Left))}
+  | {up: Some(Block(_, Down))}
+  | {down: Some(Block(_, Up))}
+  | {center: Some(Block(_, NoMove))} => false
+  | {left: Some(Block(_, Left))}
+  | {left: Some(Block(_, Up))}
+  | {left: Some(Block(_, Down))}
+  | {left: Some(Block(_, NoMove))}
   | {left: Some(Empty)}
   | {left: Some(Start)}
   | {left: Some(End)}
@@ -114,7 +114,7 @@ module Board = {
          (t, (position, boardPiece)) => {
            let updateBoardForPiece = updateBoardPiece(_, position, t);
            switch (boardPiece) {
-           | Block(_) => updateBoardForPiece(Block(NoMove))
+           | Block(id, _) => updateBoardForPiece(Block(id, NoMove))
            | Player => updateBoardForPiece(Player)
            | Empty => t
            | Start => updateBoardForPiece(Start)
@@ -138,7 +138,10 @@ module Board = {
     |> Belt.List.toArray
     |> Belt.Set.fromArray(~id=(module Belt.Id.MakeComparable(Position)));
   let createStartingPositionsForPieces = (rows, cols, blocks) =>
-    Belt.List.concat([Start, End], Belt.List.make(blocks, Block(NoMove)))
+    Belt.List.concat(
+      [Start, End],
+      Belt.List.makeBy(blocks, id => Block(id, NoMove)),
+    )
     |. Belt.List.reduce([], (currentPositionsForPieces, boardPiece) =>
          switch (
            currentPositionsForPieces
@@ -204,7 +207,7 @@ module Board = {
         {
           let movePositionForPiece = movePosition(_, position);
           switch (boardPiece) {
-          | Block(move) => movePositionForPiece(move)
+          | Block(_, move) => movePositionForPiece(move)
           | Player => movePositionForPiece(playerMove)
           | Empty
           | Start
@@ -244,17 +247,22 @@ module Board = {
     t
     |> collectOverBoard((results, (position, boardPiece)) =>
          switch (boardPiece) {
-         | Block(NoMove) => [(position, boardPiece), ...results]
-         | Block(_)
+         /* We're only updating blocks with no moves */
+         | Block(_, NoMove) => [(position, boardPiece), ...results]
+         | Block(_, _)
          | Player
          | Empty
          | Start
          | End => results
          }
        )
-    |. Belt.List.reduce(t, (t, (position, _)) =>
-         getRandomValidMoveForTile(position, t)
-         |> (move => updateBoardPiece(Block(move), position, t))
+    |. Belt.List.reduce(t, (t, boardPiecePosition) =>
+         switch (boardPiecePosition) {
+         | (position, Block(id, NoMove)) =>
+           getRandomValidMoveForTile(position, t)
+           |> (move => updateBoardPiece(Block(id, move), position, t))
+         | _ => t
+         }
        );
   let doTurn = (rows, cols, playerMove, t) =>
     t
