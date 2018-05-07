@@ -1,5 +1,5 @@
-module Component = {
-  let component = ReasonReact.statelessComponent("Component");
+let _base = () => {
+  let component = ReasonReact.statelessComponent("BoardTile");
   let make =
       (
         ~boardPiece: GameLogic.boardPiece,
@@ -10,21 +10,29 @@ module Component = {
       ) => {
     ...component,
     render: _self =>
-      switch (boardPiece) {
-      | Start => <StartTile />
-      | End => <EndTile />
-      | Block(id, move) => <BlockTile id move />
-      | Player => <Player />
-      | Empty => <div className onClick=(onClick(position)) />
-      },
+      <div className onClick=(onClick(position))>
+        (
+          switch (boardPiece) {
+          | Start => <StartTile />
+          | End => <EndTile />
+          | Block(id, move) => <BlockTile id move />
+          | Player => <Player />
+          | Empty => ReasonReact.null
+          }
+        )
+      </div>,
   };
+  (component, make);
 };
 
-let make = (~boardPiece, ~onClick, ~position, children) =>
-  Styletron.React.makeStyledComponent(
-    ~rule=
-      _props => BsCssCore.Css.(style([flexGrow(1), flexBasis(rem(10.))])),
-    ~component=Component.component,
-    ~make=Component.make(~boardPiece, ~onClick, ~position),
-    children,
+let make = (~boardPiece, ~onClick, ~position, ~totalColumns, children) =>
+  _base()
+  |> (
+    ((component, make)) =>
+      Styletron.React.makeStyledComponent(
+        ~rule=_props => BsCssCore.Css.(style([flex(1)])),
+        ~component,
+        ~make=make(~boardPiece, ~onClick, ~position),
+        children,
+      )
   );

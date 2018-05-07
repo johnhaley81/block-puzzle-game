@@ -1,5 +1,5 @@
-module Component = {
-  let component = ReasonReact.statelessComponent("Component");
+let _base = () => {
+  let component = ReasonReact.statelessComponent("Board");
   let make = (~board: GameLogic.Board.t, ~onTileClick, ~className, _children) => {
     ...component,
     render: _self =>
@@ -11,6 +11,7 @@ module Component = {
                  onTileClick
                  tiles
                  rowNumber
+                 totalRows=(board |> Belt.List.length)
                  key=(rowNumber |> string_of_int)
                />
              )
@@ -19,21 +20,26 @@ module Component = {
         )
       </div>,
   };
+  (component, make);
 };
 
 let make = (~board, ~onTileClick, children) =>
-  Styletron.React.makeStyledComponent(
-    ~rule=
-      _props =>
-        BsCssCore.Css.(
-          style([
-            display(Flex),
-            flexWrap(Wrap),
-            flexGrow(1),
-            flexBasis(rem(10.)),
-          ])
-        ),
-    ~component=Component.component,
-    ~make=Component.make(~board, ~onTileClick),
-    children,
+  _base()
+  |> (
+    ((component, make)) =>
+      Styletron.React.makeStyledComponent(
+        ~rule=
+          _props =>
+            BsCssCore.Css.(
+              style([
+                display(Flex),
+                flexDirection(Column),
+                flexWrap(Wrap),
+                flexGrow(1),
+              ])
+            ),
+        ~component,
+        ~make=make(~board, ~onTileClick),
+        children,
+      )
   );

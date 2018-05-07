@@ -25,7 +25,7 @@ let reducer = (action, state) =>
       ReasonReact.NoUpdate
   };
 
-let component = ReasonReact.reducerComponent("Router");
+let component = ReasonReact.reducerComponent("PlayGame");
 
 let _onTileClick = (send, board, tileClickedPosition, _mouseClick) =>
   board

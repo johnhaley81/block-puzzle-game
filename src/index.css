@@ -12,22 +12,3 @@ body {
   text-transform: lowercase;
   font-family: 'PT Sans', sans-serif;
 }
-
-a {
- text-decoration: none;
- border-bottom: 3px solid;
-}
-
-/* Temporary hack */
-nav a { color: #FDC02F; }
-footer a { color: #D84E44; }
-
-footer img {
-  transform: translateY(2px);
-}
-
-@media (max-width: 600px) {
-  html {
-    font-size: 80%;
-  }
-}
