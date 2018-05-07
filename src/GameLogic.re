@@ -49,10 +49,23 @@ let rec updateElement = (newElement, offset, t) =>
 let movePosition = (move, {row, col}: Position.t) : Position.t =>
   switch (move) {
   | NoMove => {row, col}
-  | Left => {row: row - 1, col}
-  | Right => {row: row + 1, col}
-  | Up => {row, col: col - 1}
-  | Down => {row, col: col + 1}
+  | Left => {row, col: col - 1}
+  | Right => {row, col: col + 1}
+  | Up => {row: row - 1, col}
+  | Down => {row: row + 1, col}
+  };
+
+let moveFromPositions =
+    (
+      {row: fromRow, col: fromCol}: Position.t,
+      {row: toRow, col: toCol}: Position.t,
+    ) =>
+  switch (fromRow - toRow, fromCol - toCol) {
+  | (0, (-1)) => Left
+  | (0, 1) => Right
+  | ((-1), 0) => Up
+  | (1, 0) => Down
+  | _ => NoMove
   };
 
 let rec getMoves = (offset, t) =>
@@ -76,6 +89,7 @@ let canMoveIntoTile = adjacentTiles =>
   | {right: Some(Block(_, Left))}
   | {up: Some(Block(_, Down))}
   | {down: Some(Block(_, Up))}
+  | {center: Some(Player)}
   | {center: Some(Block(_, NoMove))} => false
   | {left: Some(Block(_, Left))}
   | {left: Some(Block(_, Up))}
@@ -200,7 +214,39 @@ module Board = {
       )
     )
     |> (((_, results)) => results);
+  let getPiecePositionOnBoard = (boardPieceToFind, t) =>
+    t
+    |> reduceBoard(
+         None,
+         (result, next) =>
+           switch (result, next) {
+           | (Some(x), Some(_))
+           | (Some(x), None) => Some(x)
+           | (None, Some(x)) => Some(x)
+           | (None, None) => None
+           },
+         None,
+         (_, (position, boardPiece)) =>
+           switch (boardPiece, boardPieceToFind) {
+           | (Start, Start)
+           | (End, End)
+           | (Player, Player) => Some(position)
+           | (Block(id, _), Block(idToFind, _)) when id == idToFind =>
+             Some(position)
+           | _ => None
+           },
+       );
   let collectOverBoard = reduceBoard([], Belt.List.concat, []);
+  let collectAllBoardPiecePositions =
+    collectOverBoard((results, (_, boardPiece) as piecePosition) =>
+      switch (boardPiece) {
+      | Block(_, _)
+      | Player
+      | Start
+      | End => [piecePosition, ...results]
+      | Empty => results
+      }
+    );
   let collectAllMoves = (playerMove, t) =>
     collectOverBoard(
       (results, (position, boardPiece)) =>

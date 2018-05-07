@@ -1,1 +1,3 @@
-ReactDOMRe.renderToElementWithId(<Page message="Hello!" />, "index");
+[%bs.raw {|require('./index.css')|}];
+
+ReactDOMRe.renderToElementWithId(<Router />, "index");

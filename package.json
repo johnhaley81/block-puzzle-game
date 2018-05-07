@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "scripts": {
     "build": "bsb -make-world",
-    "start": "bsb -make-world -w",
+    "watch": "bsb -make-world -w",
     "clean": "bsb -clean-world",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "webpack": "webpack -w"
+    "start": "yarn clean && yarn build && yarn watch",
+    "parcel": "parcel ./src/index.html",
+    "prod": "yarn build && npx parcel build ./src/index.html --public-url ./"
   },
   "keywords": [
     "BuckleScript"
@@ -14,12 +15,14 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@astrada/bs-styletron-react": "^0.1.3",
+    "bs-css-core": "^0.2.2",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",
     "reason-react": ">=0.3.0"
   },
   "devDependencies": {
     "bs-platform": "^3.0.0",
-    "webpack": "^3.8.1"
+    "parcel-bundler": "^1.8.1"
   }
 }
