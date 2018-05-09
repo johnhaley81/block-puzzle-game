@@ -44,7 +44,9 @@ let make =
   ...component,
   reducer,
   initialState: () => {
-    board: GameLogic.Board.createBoard(rows, cols, blocks),
+    board:
+      GameLogic.Board.createBoard(rows, cols, blocks)
+      |> GameLogic.Board.updateBlockMovesForNextTurn,
     turnCount: 0,
     rows,
     cols,
