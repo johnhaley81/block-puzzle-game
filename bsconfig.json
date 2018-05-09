@@ -20,8 +20,7 @@
   ],
   "bs-dependencies": [
     "reason-react",
-    "@astrada/bs-styletron-react",
-    "bs-css-core"
+    "bs-css"
   ],
   "refmt": 3
 }

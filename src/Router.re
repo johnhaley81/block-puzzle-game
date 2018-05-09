@@ -34,15 +34,13 @@ let make = _children => {
     ),
   ],
   render: self =>
-    <Styletron.React.Provider>
-      <div>
-        <main>
-          (
-            switch (self.state.route) {
-            | PlayGame => <PlayGame />
-            }
-          )
-        </main>
-      </div>
-    </Styletron.React.Provider>,
+    <div>
+      <main>
+        (
+          switch (self.state.route) {
+          | PlayGame => <PlayGame />
+          }
+        )
+      </main>
+    </div>,
 };

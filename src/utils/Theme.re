@@ -1,48 +1,17 @@
-open BsCssCore.Css;
-
-let pageWidth = maxWidth(em(52.));
-
-let scale = [|0., 0.25, 0.5, 1., 2., 4.|];
-
-let space = x => rem(scale[x]);
-
-let p = x => x |> space |> padding;
-
-let py = (~x=?, y) =>
-  switch (x) {
-  | Some(x_) => padding2(~v=space(x_), ~h=space(y))
-  | None => padding2(~v=space(y), ~h=space(0))
-  };
-
-let px_ = (~y=?, x) =>
-  switch (y) {
-  | Some(y_) => padding2(~v=space(x), ~h=space(y_))
-  | None => padding2(~v=space(0), ~h=space(x))
-  };
-
-let m = x => x |> space |> margin;
-
-let mr = x => x |> space |> marginRight;
-
-let ml = x => x |> space |> marginLeft;
-
-let mt = x => x |> space |> marginTop;
-
-let mb = x => x |> space |> marginBottom;
-
-module Color = {
-  let purple = hex("996BDE");
-  let red = hex("FF4136");
-  let green = hex("2ECC40");
-  let gray = hex("AAAAAA");
-  let yellow = hex("ffc107");
+module Border = {
+  let color = Css.hex("215A87");
+  let size = `em(0.0625);
+  let style = `solid;
+  let boardRadius = `em(1.0);
+  let boardTopBottomSize = `em(2.25);
+  let boardLeftRightSize = `em(1.5);
 };
 
-module Typography = {
-  let one = BsCssCore.Css.px(72);
-  let two = BsCssCore.Css.px(48);
-  let three = BsCssCore.Css.px(36);
-  let four = BsCssCore.Css.px(24);
-  let five = BsCssCore.Css.px(18);
-  let six = BsCssCore.Css.px(12);
+module Colors = {
+  let board = Css.hex("19476C");
+  let blockBase = Css.hex("0E293E");
+  let blockMovePointer = Css.hex("AFC5D5");
+  let player = Css.hex("FFFFFF");
 };
+
+let baseTileSizeMultiplier = 2.625;

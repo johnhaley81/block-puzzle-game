@@ -1,14 +1,9 @@
+let baseStyles = Styles.makeStyles(Css.[flexGrow(1)]);
+
 let component = ReasonReact.statelessComponent("StartTile");
 
-let make = (~className, _children) => {
+let make = (~styles=[], _children) => {
   ...component,
-  render: _self => <div className> ("S" |> ReasonReact.string) </div>,
+  render: _self =>
+    <div className=(baseStyles(styles))> ("S" |> ReasonReact.string) </div>,
 };
-
-let make = children =>
-  Styletron.React.makeStyledComponent(
-    ~rule=_props => BsCssCore.Css.(style([flexGrow(1)])),
-    ~component,
-    ~make,
-    children,
-  );

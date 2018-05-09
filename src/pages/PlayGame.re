@@ -51,10 +51,10 @@ let make =
     blocks,
   },
   render: self =>
-    <Styletron.React.Provider>
-      <Board
-        board=self.state.board
-        onTileClick=(_onTileClick(self.send, self.state.board))
-      />
-    </Styletron.React.Provider>,
+    <Board
+      board=self.state.board
+      cols
+      rows
+      onTileClick=(_onTileClick(self.send, self.state.board))
+    />,
 };
