@@ -104,8 +104,8 @@ let canMoveIntoTile = adjacentTiles =>
 
 module Board = {
   type t = list(list(boardPiece));
-  let rows = 11;
-  let cols = 7;
+  let rows = 10;
+  let cols = 6;
   let blocks = 20;
   let makeEmptyBoard = (rows, cols) =>
     Belt.List.makeBy(rows, (_) => Belt.List.make(cols, Empty));
