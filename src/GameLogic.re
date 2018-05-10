@@ -89,25 +89,28 @@ let rec getMoves = (offset, t) =>
 
 let getMoves = getMoves(0);
 
-let canMoveIntoTile = adjacentTiles =>
-  switch (adjacentTiles) {
-  | {left: Some(Block(_, Right))}
-  | {left: Some(Start(true))}
-  | {left: Some(End(true))}
-  | {right: Some(Block(_, Left))}
-  | {up: Some(Block(_, Down))}
-  | {down: Some(Block(_, Up))}
-  | {center: Some(Player)}
-  | {center: Some(Block(_, NoMove))} => false
-  | {left: Some(Block(_, Left))}
-  | {left: Some(Block(_, Up))}
-  | {left: Some(Block(_, Down))}
-  | {left: Some(Block(_, NoMove))}
-  | {left: Some(Empty)}
-  | {left: Some(Start(false))}
-  | {left: Some(End(false))}
-  | {left: Some(Player)}
-  | {left: None} => true
+let canMoveIntoTile = (adjacentTiles, boardPiece) =>
+  switch (adjacentTiles, boardPiece) {
+  | ({left: Some(Block(_, Right)), _}, _)
+  | ({left: Some(Start(true)), _}, _)
+  | ({left: Some(End(true)), _}, _)
+  | ({right: Some(Block(_, Left)), _}, _)
+  | ({up: Some(Block(_, Down)), _}, _)
+  | ({down: Some(Block(_, Up)), _}, _)
+  | ({center: None, _}, _)
+  | ({center: Some(End(_))}, Block(_, _))
+  | ({center: Some(Start(_)), _}, _)
+  | ({center: Some(Player), _}, _)
+  | ({center: Some(Block(_, NoMove))}, _) => false
+  | ({left: Some(Block(_, Left))}, _)
+  | ({left: Some(Block(_, Up))}, _)
+  | ({left: Some(Block(_, Down))}, _)
+  | ({left: Some(Block(_, NoMove))}, _)
+  | ({left: Some(Empty)}, _)
+  | ({left: Some(Start(false))}, _)
+  | ({left: Some(End(false))}, _)
+  | ({left: Some(Player)}, _)
+  | ({left: None}, _) => true
   };
 
 module Board = {
@@ -195,10 +198,10 @@ module Board = {
     down: getBoardPieceForMove(Down, position, t),
     center: getBoardPieceForMove(NoMove, position, t),
   };
-  let canMove = (move, position, t) =>
+  let canMove = (move, position, boardPiece, t) =>
     movePosition(move, position)
     |> (position => getAdjacentTiles(position, t))
-    |> canMoveIntoTile;
+    |> canMoveIntoTile(_, boardPiece);
   let reduceBoard = (initRow, rowFn, initCol, colFn, t) =>
     Belt.List.reduce(t, (0, initRow), ((rowNum, resultsSoFar), row) =>
       (
@@ -306,9 +309,10 @@ module Board = {
         ),
       t,
     );
-  let rec getAllValidMovesForTile = (move, position, t) => {
-    let getNextValidMovesForTile = getAllValidMovesForTile(_, position, t);
-    switch (move, canMove(move, position, t)) {
+  let rec getAllValidMovesForTile = (move, position, boardPiece, t) => {
+    let getNextValidMovesForTile =
+      getAllValidMovesForTile(_, position, boardPiece, t);
+    switch (move, canMove(move, position, boardPiece, t)) {
     /* NoMove is added iff there are no valid moves. That is checked elsewhere */
     | (NoMove, _) => []
     | (Left, true) => [Left, ...getNextValidMovesForTile(NoMove)]
@@ -321,11 +325,11 @@ module Board = {
     | (Down, false) => getNextValidMovesForTile(Up)
     };
   };
-  let getAllValidMovesForTile = (position, t) =>
-    getAllValidMovesForTile(Down, position, t);
-  let getRandomValidMoveForTile = (position, t) =>
+  let getAllValidMovesForTile = (position, boardPiece, t) =>
+    getAllValidMovesForTile(Down, position, boardPiece, t);
+  let getRandomValidMoveForTile = (position, boardPiece, t) =>
     switch (
-      getAllValidMovesForTile(position, t)
+      getAllValidMovesForTile(position, boardPiece, t)
       |> Belt.List.shuffle
       |> Belt.List.head
     ) {
@@ -348,7 +352,7 @@ module Board = {
     |. Belt.List.reduce(t, (t, boardPiecePosition) =>
          switch (boardPiecePosition) {
          | (position, Block(id, NoMove)) =>
-           getRandomValidMoveForTile(position, t)
+           getRandomValidMoveForTile(position, Block(id, NoMove), t)
            |> (move => updateBoardPiece(Block(id, move), position, t))
          | _ => t
          }

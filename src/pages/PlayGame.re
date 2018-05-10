@@ -15,7 +15,9 @@ let reducer = (action, {board, rows, cols, turnCount} as state) =>
   | DoMove(move) =>
     board
     |> GameLogic.Board.getPiecePositionOnBoard(GameLogic.Player)
-    |. Belt.Option.map(GameLogic.Board.canMove(move, _, board))
+    |. Belt.Option.map(
+         GameLogic.Board.canMove(move, _, GameLogic.Player, board),
+       )
     |. Belt.Option.getWithDefault(false) ?
       ReasonReact.Update({
         ...state,
