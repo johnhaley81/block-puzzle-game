@@ -9,18 +9,18 @@ type state = {
 type action =
   | DoMove(GameLogic.move);
 
-let reducer = (action, state) =>
+let reducer = (action, {board, rows, cols, turnCount} as state) =>
   switch (action) {
+  | DoMove(NoMove) => ReasonReact.NoUpdate
   | DoMove(move) =>
-    state.board
+    board
     |> GameLogic.Board.getPiecePositionOnBoard(GameLogic.Player)
-    |. Belt.Option.map(GameLogic.Board.canMove(move, _, state.board))
+    |. Belt.Option.map(GameLogic.Board.canMove(move, _, board))
     |. Belt.Option.getWithDefault(false) ?
       ReasonReact.Update({
         ...state,
-        board:
-          state.board |> GameLogic.Board.doTurn(state.rows, state.cols, move),
-        turnCount: state.turnCount + 1,
+        board: board |> GameLogic.Board.doTurn(rows, cols, move),
+        turnCount: turnCount + 1,
       }) :
       ReasonReact.NoUpdate
   };
