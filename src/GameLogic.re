@@ -7,8 +7,8 @@ type move =
 
 type boardPiece =
   | Empty
-  | Start
-  | End
+  | Start(bool)
+  | End(bool)
   | Block(int, move)
   | Player;
 
@@ -76,8 +76,14 @@ let rec getMoves = (offset, t) =>
       ...getMoves(offset + 1, rest),
     ]
   | [Player, ...rest] => [(offset, Player), ...getMoves(offset + 1, rest)]
-  | [Start, ...rest] => [(offset, Start), ...getMoves(offset + 1, rest)]
-  | [End, ...rest] => [(offset, End), ...getMoves(offset + 1, rest)]
+  | [Start(containsPlayer), ...rest] => [
+      (offset, Start(containsPlayer)),
+      ...getMoves(offset + 1, rest),
+    ]
+  | [End(containsPlayer), ...rest] => [
+      (offset, End(containsPlayer)),
+      ...getMoves(offset + 1, rest),
+    ]
   | [Empty, ...rest] => getMoves(offset + 1, rest)
   };
 
@@ -86,6 +92,8 @@ let getMoves = getMoves(0);
 let canMoveIntoTile = adjacentTiles =>
   switch (adjacentTiles) {
   | {left: Some(Block(_, Right))}
+  | {left: Some(Start(true))}
+  | {left: Some(End(true))}
   | {right: Some(Block(_, Left))}
   | {up: Some(Block(_, Down))}
   | {down: Some(Block(_, Up))}
@@ -96,8 +104,8 @@ let canMoveIntoTile = adjacentTiles =>
   | {left: Some(Block(_, Down))}
   | {left: Some(Block(_, NoMove))}
   | {left: Some(Empty)}
-  | {left: Some(Start)}
-  | {left: Some(End)}
+  | {left: Some(Start(false))}
+  | {left: Some(End(false))}
   | {left: Some(Player)}
   | {left: None} => true
   };
@@ -131,8 +139,9 @@ module Board = {
            | Block(id, _) => updateBoardForPiece(Block(id, NoMove))
            | Player => updateBoardForPiece(Player)
            | Empty => t
-           | Start => updateBoardForPiece(Start)
-           | End => updateBoardForPiece(End)
+           | Start(containsPlayer) =>
+             updateBoardForPiece(Start(containsPlayer))
+           | End(containsPlayer) => updateBoardForPiece(End(containsPlayer))
            };
          },
        );
@@ -152,11 +161,13 @@ module Board = {
     |> Belt.List.toArray
     |> Belt.Set.fromArray(~id=(module Belt.Id.MakeComparable(Position)));
   let createStartingPositionsForPieces = (rows, cols, blocks) =>
-    Belt.List.concat(
-      [Start, End],
-      Belt.List.makeBy(blocks, id => Block(id, NoMove)),
-    )
-    |. Belt.List.reduce([], (currentPositionsForPieces, boardPiece) =>
+    Belt.List.concat([], Belt.List.makeBy(blocks, id => Block(id, NoMove)))
+    |. Belt.List.reduce(
+         [
+           (Position.make(0, 0), End(false)),
+           (Position.make(rows - 1, cols - 1), Start(true)),
+         ],
+         (currentPositionsForPieces, boardPiece) =>
          switch (
            currentPositionsForPieces
            |> getCurrentlyOccupiedPositions
@@ -164,11 +175,6 @@ module Board = {
            boardPiece,
          ) {
          | (None, _) => currentPositionsForPieces
-         | (Some(position), Start) => [
-             (position, Start),
-             (position, Player),
-             ...currentPositionsForPieces,
-           ]
          | (Some(position), boardPiece) => [
              (position, boardPiece),
              ...currentPositionsForPieces,
@@ -228,8 +234,10 @@ module Board = {
          None,
          (_, (position, boardPiece)) =>
            switch (boardPiece, boardPieceToFind) {
-           | (Start, Start)
-           | (End, End)
+           | (End(_), End(_))
+           | (Start(_), Start(_))
+           | (End(true), Player)
+           | (Start(true), Player)
            | (Player, Player) => Some(position)
            | (Block(id, _), Block(idToFind, _)) when id == idToFind =>
              Some(position)
@@ -242,8 +250,8 @@ module Board = {
       switch (boardPiece) {
       | Block(_, _)
       | Player
-      | Start
-      | End => [piecePosition, ...results]
+      | Start(_)
+      | End(_) => [piecePosition, ...results]
       | Empty => results
       }
     );
@@ -253,14 +261,38 @@ module Board = {
         {
           let movePositionForPiece = movePosition(_, position);
           switch (boardPiece) {
-          | Block(_, move) => movePositionForPiece(move)
-          | Player => movePositionForPiece(playerMove)
+          | Block(_, move) => (
+              (movePositionForPiece(move), boardPiece),
+              None,
+            )
+          | Start(true) => (
+              (movePositionForPiece(playerMove), Player),
+              Some((movePositionForPiece(NoMove), Start(false))),
+            )
+          | End(true) => (
+              (movePositionForPiece(playerMove), Player),
+              Some((movePositionForPiece(NoMove), End(false))),
+            )
+          | Player => ((movePositionForPiece(playerMove), Player), None)
           | Empty
-          | Start
-          | End => movePositionForPiece(NoMove)
+          | Start(false)
+          | End(false) => (
+              (movePositionForPiece(NoMove), boardPiece),
+              None,
+            )
           };
         }
-        |> (position => [(position, boardPiece), ...results]),
+        |> (
+          ((newPosition, optionalPosition)) =>
+            switch (optionalPosition) {
+            | Some(optionalPosition) => [
+                newPosition,
+                optionalPosition,
+                ...results,
+              ]
+            | None => [newPosition, ...results]
+            }
+        ),
       t,
     );
   let rec getAllValidMovesForTile = (move, position, t) => {
@@ -298,8 +330,8 @@ module Board = {
          | Block(_, _)
          | Player
          | Empty
-         | Start
-         | End => results
+         | Start(_)
+         | End(_) => results
          }
        )
     |. Belt.List.reduce(t, (t, boardPiecePosition) =>

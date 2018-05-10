@@ -28,8 +28,8 @@ let make =
     <div className=(baseStyles(styles)) onClick=(onClick(position))>
       (
         switch (boardPiece) {
-        | Start => <StartTile />
-        | End => <EndTile />
+        | Start(containsPlayer) => <StartTile containsPlayer />
+        | End(containsPlayer) => <EndTile containsPlayer />
         | Block(id, move) => <BlockTile id move />
         | Player => <Player />
         | Empty => <div />
