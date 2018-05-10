@@ -60,7 +60,7 @@ let moveFromPositions =
       {row: fromRow, col: fromCol}: Position.t,
       {row: toRow, col: toCol}: Position.t,
     ) =>
-  switch (fromRow - toRow, fromCol - toCol) {
+  switch (toRow - fromRow, toCol - fromCol) {
   | (0, (-1)) => Left
   | (0, 1) => Right
   | ((-1), 0) => Up
@@ -227,22 +227,25 @@ module Board = {
          (result, next) =>
            switch (result, next) {
            | (Some(x), Some(_))
-           | (Some(x), None) => Some(x)
+           | (Some(x), None)
            | (None, Some(x)) => Some(x)
            | (None, None) => None
            },
          None,
-         (_, (position, boardPiece)) =>
-           switch (boardPiece, boardPieceToFind) {
-           | (End(_), End(_))
-           | (Start(_), Start(_))
-           | (End(true), Player)
-           | (Start(true), Player)
-           | (Player, Player) => Some(position)
-           | (Block(id, _), Block(idToFind, _)) when id == idToFind =>
-             Some(position)
-           | _ => None
-           },
+         (result, (position, boardPiece)) =>
+           (
+             switch (boardPiece, boardPieceToFind) {
+             | (End(_), End(_))
+             | (Start(_), Start(_))
+             | (End(true), Player)
+             | (Start(true), Player)
+             | (Player, Player) => Some(position)
+             | (Block(id, _), Block(idToFind, _)) when id == idToFind =>
+               Some(position)
+             | _ => None
+             }
+           )
+           |. Belt.Option.mapWithDefault(result, x => Some(x)),
        );
   let collectOverBoard = reduceBoard([], Belt.List.concat, []);
   let collectAllBoardPiecePositions =
@@ -265,9 +268,17 @@ module Board = {
               (movePositionForPiece(move), boardPiece),
               None,
             )
+          | Start(true) when playerMove == NoMove => (
+              (position, Start(true)),
+              None,
+            )
           | Start(true) => (
               (movePositionForPiece(playerMove), Player),
               Some((movePositionForPiece(NoMove), Start(false))),
+            )
+          | End(true) when playerMove == NoMove => (
+              (position, End(true)),
+              None,
             )
           | End(true) => (
               (movePositionForPiece(playerMove), Player),
@@ -343,8 +354,11 @@ module Board = {
          }
        );
   let doTurn = (rows, cols, playerMove, t) =>
-    t
-    |> collectAllMoves(playerMove)
-    |> createBoardWithMoves(rows, cols)
-    |> updateBlockMovesForNextTurn;
+    /* Don't do a turn if the player isn't moving */
+    playerMove == NoMove ?
+      t :
+      t
+      |> collectAllMoves(playerMove)
+      |> createBoardWithMoves(rows, cols)
+      |> updateBlockMovesForNextTurn;
 };
