@@ -3,10 +3,10 @@
 Run this project:
 
 ```
-npm install
-npm start
+yarn
+yarn build:watch
 # in another tab
-npm run webpack
+yarn start
 ```
 
-After you see the webpack compilation succeed (the `npm run webpack` step), open up the nested html files in `src/*` (**no server needed!**). Then modify whichever file in `src` and refresh the page to see the changes.
+After you see the parcel compilation succeed (the `yarn start` step), open up the nested html files in `src/*` (**no server needed!**). Then modify whichever file in `src` and refresh the page to see the changes.
